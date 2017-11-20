@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/Agile-IoT/agile-upfront-locks/issues"
   },
-  "homepage": "https://github.com/Agile-IoT/agile-upfront-locks#readme"
+  "homepage": "https://github.com/Agile-IoT/agile-upfront-locks#readme",
+  "dependencies": {
+    "agile-audit": "git+https://github.com/agile-iot/agile-audit.git#v0.1.0",
+    "winston": "^2.4.0"
+  }
 }
