@@ -16,11 +16,12 @@ module.exports = function (Lock) {
   };
 
   IsGroupMemberLock.meta = {
-    arity: 1,
+    arity: 2,
     descr: "This lock is open iff the entity to which this lock is applied to is a member of a specified group",
     name: "is group member",
     args: [
-      "group_name"
+      "group_name",
+      "id"
     ]
   }
 
@@ -46,30 +47,59 @@ module.exports = function (Lock) {
 
   IsGroupMemberLock.prototype.isOpen = function (context, scope) {
     w.debug("IsGroupMemberLock.prototype.isOpen");
+
     if (valid(context)) {
       if (!context.isStatic) {
-        if (valid(context.entity) && valid(context.entity.type)) {
-            if (context.entity.data.hasOwnProperty("groups") &&
-            context.entity.data.groups[0].group_name == this.args[0]) {
-              // w.debug("GROUPLOCK: groups equal");
-              return Promise.resolve({
-                open: true,
-                cond: false
-              });
-            } else {
-              // w.debug("GROUPLOCK: groups don't equal");
+        w.error(JSON.stringify(context.entity.data))
+        if (valid(context.entity) && valid(context.entity.data) && valid(context.entity.data.id)) {
+          var other = context.getOtherEntity();
+
+          //w.error(JSON.stringify(other.data))
+
+          if (valid(other) && valid(other.data) && valid(other.data.owner)) {
+            w.error(JSON.stringify(other.data))
+
+            if(!context.entity.data.hasOwnProperty("groups")){
               return Promise.resolve({
                 open: false,
                 cond: false,
                 lock: this
               });
+            } else {
+              let gs = context.entity.data.groups;
+              let there = false;
+              gs.forEach((group)=>{
+                  //w.error("wwww"+JSON.stringify(this.args))
+                  //w.error(JSON.stringify(context.entity.id))
+                  //w.error("www"+JSON.stringify(group))
+                   if(group.group_name === this.args[0] && group.owner === this.args[1]){
+                     there = true
+                   }
+              })
+
+              if (there)
+                return Promise.resolve({
+                  open: true,
+                  cond: false
+                });
+              else
+                return Promise.resolve({
+                  open: false,
+                  cond: false,
+                  lock: this
+                });
             }
+          } else {
+            return Promise.reject(new Error("IsGroupMemberLock.prototype.isOpen cannot evaluate opposing entities in message context or context is invalid!"));
+          }
+        } else {
+          return Promise.reject(new Error("IsGroupMemberLock.prototype.isOpen current context is invalid!"));
         }
       } else {
         return Promise.reject(new Error("IsGroupMemberLock.prototype.isOpen not implemented for static analysis, yet"));
       }
     } else
-      return Promise.reject(new Error("IsGroupMemberLock.prototype.isOpen: Context is invalid"));
+      return Promise.reject(new Error("IsOwnerLock.prototype.isOpen: Context is invalid"));
   };
 
   IsGroupMemberLock.prototype.lub = function (lock) {
